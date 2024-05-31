@@ -1,6 +1,6 @@
 use super::Ctx;
 use crate::ast::Expr;
-use std::{fmt::Display, rc::Rc};
+use std::{cell::RefCell, fmt::Display, rc::Rc};
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Value {
@@ -8,7 +8,7 @@ pub enum Value {
     Int(i64),
     Float(f64),
     String(String),
-    List(Vec<Value>),
+    List(Rc<RefCell<Vec<Value>>>),
     Func(Rc<Func>),
     Unit,
 }
@@ -36,6 +36,8 @@ impl Display for Value {
             Value::String(val) => write!(f, "{val}"),
             Value::Func(_) => write!(f, "func"),
             Value::List(list) => {
+                let list = list.borrow();
+
                 write!(f, "[")?;
 
                 for (i, val) in list.iter().enumerate() {
