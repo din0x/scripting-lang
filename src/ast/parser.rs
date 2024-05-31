@@ -308,17 +308,19 @@ fn parse_primary(parser: &mut Parser) -> Result {
                 let expr = parse_expr(parser)?;
                 exprs.push(expr);
 
-                
                 match parser.curr() {
                     Token::Punc(Punc::Comma) => {
                         parser.next();
                     }
-                    _ => break
+                    _ => break,
                 }
             }
 
             if parser.curr() != &Token::Paren(Paren::RBracket) {
-                return Err(Error::MissingDelimiter { delimiter: Paren::RBracket, found: parser.curr().clone() });
+                return Err(Error::MissingDelimiter {
+                    delimiter: Paren::RBracket,
+                    found: parser.curr().clone(),
+                });
             }
 
             Ok(Expr::List(exprs))
