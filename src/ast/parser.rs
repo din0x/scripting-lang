@@ -37,7 +37,7 @@ impl Display for Error {
             Error::Expected { expected, found } => {
                 write!(f, "expected `{expected}`, found `{found}`")
             }
-            Error::CannotAssign => write!(f, "cannot assign to a temporary value")
+            Error::CannotAssign => write!(f, "cannot assign to a temporary value"),
         }
     }
 }
@@ -141,8 +141,14 @@ fn parse_assign(parser: &mut Parser) -> Result {
 
     let assign = match left {
         Expr::Ident(name) => Assign::new(Pat::Ident(name), right),
-        Expr::Index(index) => Assign::new(Pat::Index { expr: index.expr, index: index.index }, right),
-        _ => return Err(Error::CannotAssign)
+        Expr::Index(index) => Assign::new(
+            Pat::Index {
+                expr: index.expr,
+                index: index.index,
+            },
+            right,
+        ),
+        _ => return Err(Error::CannotAssign),
     };
 
     Ok(Expr::Assign(Box::new(assign)))
