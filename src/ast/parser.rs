@@ -299,6 +299,30 @@ fn parse_primary(parser: &mut Parser) -> Result {
         Token::Ident(name) => Ok(Expr::Ident(name.clone())),
         Token::Lit(literal) => Ok(Expr::Lit(literal.clone())),
         Token::Paren(Paren::LCurly) => parse_block(parser),
+        Token::Paren(Paren::LBracket) => {
+            parser.next();
+
+            let mut exprs = Vec::new();
+
+            while parser.curr() != &Token::Paren(Paren::RBracket) && parser.curr() != &Token::Eof {
+                let expr = parse_expr(parser)?;
+                exprs.push(expr);
+
+                
+                match parser.curr() {
+                    Token::Punc(Punc::Comma) => {
+                        parser.next();
+                    }
+                    _ => break
+                }
+            }
+
+            if parser.curr() != &Token::Paren(Paren::RBracket) {
+                return Err(Error::MissingDelimiter { delimiter: Paren::RBracket, found: parser.curr().clone() });
+            }
+
+            Ok(Expr::List(exprs))
+        }
         Token::Paren(Paren::LParen) => {
             parser.next();
 

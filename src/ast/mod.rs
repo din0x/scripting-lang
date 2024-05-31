@@ -22,6 +22,7 @@ pub enum Expr {
     Call(Box<Call>),
     Index(Box<Index>),
     Ident(Box<str>),
+    List(Vec<Expr>),
     Lit(Lit),
 }
 
