@@ -33,6 +33,10 @@ pub enum Error {
         value: Type,
         with: Type,
     },
+    NoElement {
+        index: usize,
+        len: usize,
+    },
     Recursion,
 }
 
@@ -52,7 +56,10 @@ impl Display for Error {
             Error::CannotIndex { value, with } => {
                 write!(f, "cannot index `{value}`, with `{with}`")
             }
-            Error::Recursion => write!(f, "program has reached recursion limit")
+            Error::NoElement { index, len } => {
+                write!(f, "trying to get element {index}, but length is {len}")
+            }
+            Error::Recursion => write!(f, "program has reached recursion limit"),
         }
     }
 }
