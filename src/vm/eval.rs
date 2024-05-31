@@ -162,6 +162,18 @@ fn eval_index(expr: Index, ctx: &mut Ctx) -> Result {
     let index = eval(expr.index, ctx)?;
 
     match (value, index) {
+        (Value::List(list), Value::Int(i)) => {
+            let index = if i >= 0 {
+                i as usize
+            } else {
+                list.len().wrapping_sub(i.abs() as usize)
+            };
+
+            list.get(index).cloned().ok_or(Error::NoElement {
+                index,
+                len: list.len(),
+            })
+        }
         (value, index) => Err(Error::CannotIndex {
             value: value.get_type(),
             with: index.get_type(),
