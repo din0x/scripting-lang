@@ -8,6 +8,7 @@ pub enum Value {
     Int(i64),
     Float(f64),
     String(String),
+    List(Vec<Value>),
     Func(Rc<Func>),
     Unit,
 }
@@ -19,6 +20,7 @@ impl Value {
             Value::Int(_) => Type::Int,
             Value::Float(_) => Type::Float,
             Value::String(_) => Type::String,
+            Value::List(_) => Type::List,
             Value::Func(_) => Type::Func,
             Value::Unit => Type::Unit,
         }
@@ -33,6 +35,21 @@ impl Display for Value {
             Value::Float(val) => write!(f, "{}", val),
             Value::String(val) => write!(f, "{val}"),
             Value::Func(_) => write!(f, "func"),
+            Value::List(list) => {
+                write!(f, "[")?;
+
+                for (i, val) in list.iter().enumerate() {
+                    write!(f, "{val}")?;
+
+                    if i != list.len() - 1 {
+                        write!(f, ", ")?;
+                    }
+                }
+
+                write!(f, "]")?;
+                
+                Ok(())
+            }
             Value::Unit => write!(f, "()"),
         }
     }
@@ -63,6 +80,7 @@ pub enum Type {
     Int,
     Float,
     String,
+    List,
     Func,
     Unit,
 }
@@ -76,6 +94,7 @@ impl Display for Type {
             Int => "int",
             Float => "float",
             String => "str",
+            List => "list",
             Func => "func",
             Unit => "()",
         };

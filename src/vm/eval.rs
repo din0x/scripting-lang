@@ -19,6 +19,7 @@ pub(super) fn eval(expr: Expr, ctx: &mut Ctx) -> Result {
         Expr::Index(index) => eval_index(*index, ctx),
         Expr::Ident(name) => eval_ident(name, ctx),
         Expr::Lit(lit) => Ok(eval_literal(lit)),
+        Expr::List(list) => eval_list(list, ctx),
     }
 }
 
@@ -179,4 +180,16 @@ fn eval_literal(lit: Lit) -> Value {
         Lit::Int(i) => Value::Int(i),
         Lit::String(s) => Value::String(s),
     }
+}
+
+fn eval_list(exprs: Vec<Expr>, ctx: &mut Ctx) -> Result {
+    let mut list = Vec::with_capacity(exprs.len());
+
+    for expr in exprs.into_iter() {
+        let value = eval(expr, ctx)?;
+
+        list.push(value);
+    }
+
+    Ok(Value::List(list))
 }
