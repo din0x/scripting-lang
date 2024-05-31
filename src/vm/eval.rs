@@ -1,12 +1,12 @@
 use super::{
     value::{Func, Value},
-    Ctx, CtxInner, Result,
+    Ctx, Result,
 };
 use crate::{
     ast::{self, token::Lit, Binary, BinaryOp, Block, Call, Decl, Expr, Index, Unary, UnaryOp},
     vm::Error,
 };
-use std::{borrow::Borrow, cell::RefCell, collections::HashMap, rc::Rc};
+use std::{borrow::Borrow, collections::HashMap, rc::Rc};
 
 pub(super) fn eval(expr: Expr, ctx: &mut Ctx) -> Result {
     match expr {
@@ -23,12 +23,7 @@ pub(super) fn eval(expr: Expr, ctx: &mut Ctx) -> Result {
 }
 
 fn eval_block(block: Block, ctx: &mut Ctx) -> Result {
-    let mut ctx = Ctx {
-        inner: Rc::new(RefCell::new(CtxInner {
-            parent: Some(ctx.clone()),
-            vars: HashMap::new(),
-        })),
-    };
+    let mut ctx = Ctx::nested(ctx.clone());
 
     for expr in block.content {
         eval(expr, &mut ctx)?;
@@ -150,14 +145,15 @@ fn eval_call(call: Call, ctx: &mut Ctx) -> Result {
         args.insert(name.clone(), val);
     }
 
-    let mut ctx = Ctx {
-        inner: Rc::new(RefCell::new(CtxInner {
-            parent: Some(func.ctx.clone()),
-            vars: args,
-        })),
-    };
+    let mut func_ctx = Ctx::nested(func.ctx.clone());
 
-    eval(func.body.clone(), &mut ctx)
+    func_ctx.recursion = ctx.recursion - 1;
+
+    if func_ctx.recursion == 0 {
+        return Err(Error::Recursion);
+    }
+
+    eval(func.body.clone(), &mut func_ctx)
 }
 
 fn eval_index(expr: Index, ctx: &mut Ctx) -> Result {

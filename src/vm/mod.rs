@@ -33,6 +33,7 @@ pub enum Error {
         value: Type,
         with: Type,
     },
+    Recursion,
 }
 
 impl Display for Error {
@@ -51,12 +52,14 @@ impl Display for Error {
             Error::CannotIndex { value, with } => {
                 write!(f, "cannot index `{value}`, with `{with}`")
             }
+            Error::Recursion => write!(f, "program has reached recursion limit")
         }
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct Ctx {
+    recursion: usize,
     inner: Rc<RefCell<CtxInner>>,
 }
 
@@ -69,8 +72,19 @@ struct CtxInner {
 impl Ctx {
     pub fn new() -> Self {
         Self {
+            recursion: 256,
             inner: Rc::new(RefCell::new(CtxInner {
                 parent: None,
+                vars: HashMap::new(),
+            })),
+        }
+    }
+
+    pub fn nested(inner: Ctx) -> Self {
+        Self {
+            recursion: inner.recursion,
+            inner: Rc::new(RefCell::new(CtxInner {
+                parent: Some(inner),
                 vars: HashMap::new(),
             })),
         }
