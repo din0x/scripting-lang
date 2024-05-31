@@ -47,7 +47,7 @@ impl Display for Value {
                 }
 
                 write!(f, "]")?;
-                
+
                 Ok(())
             }
             Value::Unit => write!(f, "()"),
