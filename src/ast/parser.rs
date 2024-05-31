@@ -4,7 +4,7 @@ use super::{
     token::{Keyword, Paren, Punc, Token},
     Binary, BinaryOp, Call, Decl, Expr, Func, Index, Unary, UnaryOp,
 };
-use crate::ast::{token::Op, Block};
+use crate::ast::{token::Op, Assign, Block, Pat};
 
 type Result = std::result::Result<Expr, Error>;
 
@@ -20,6 +20,7 @@ pub enum Error {
     Unexpected(Token),
     ExpectedIdent { found: Token },
     Expected { expected: Token, found: Token },
+    CannotAssign,
 }
 
 impl Display for Error {
@@ -36,6 +37,7 @@ impl Display for Error {
             Error::Expected { expected, found } => {
                 write!(f, "expected `{expected}`, found `{found}`")
             }
+            Error::CannotAssign => write!(f, "cannot assign to a temporary value")
         }
     }
 }
@@ -124,6 +126,26 @@ fn parse_decl(parser: &mut Parser) -> Result {
         name: name.clone(),
         expr,
     })))
+}
+
+fn parse_assign(parser: &mut Parser) -> Result {
+    let left = parser.parse()?;
+
+    if parser.curr() != &Token::Op(Op::Assign) {
+        return Ok(left);
+    }
+
+    parser.next();
+
+    let right = parse_expr(parser)?;
+
+    let assign = match left {
+        Expr::Ident(name) => Assign::new(Pat::Ident(name), right),
+        Expr::Index(index) => Assign::new(Pat::Index { expr: index.expr, index: index.index }, right),
+        _ => return Err(Error::CannotAssign)
+    };
+
+    Ok(Expr::Assign(Box::new(assign)))
 }
 
 fn parse_func(parser: &mut Parser) -> Result {
@@ -358,6 +380,7 @@ impl<'tokens> Parser<'tokens> {
             tokens,
             parse_fns: &[
                 parse_decl,
+                parse_assign,
                 parse_func,
                 parse_binary,
                 parse_unary,

@@ -3,15 +3,19 @@ use super::{
     Ctx, Result,
 };
 use crate::{
-    ast::{self, token::Lit, Binary, BinaryOp, Block, Call, Decl, Expr, Index, Unary, UnaryOp},
+    ast::{
+        self, token::Lit, Assign, Binary, BinaryOp, Block, Call, Decl, Expr, Index, Pat, Unary,
+        UnaryOp,
+    },
     vm::Error,
 };
-use std::{borrow::Borrow, collections::HashMap, rc::Rc};
+use std::{borrow::Borrow, cell::RefCell, collections::HashMap, rc::Rc};
 
 pub(super) fn eval(expr: Expr, ctx: &mut Ctx) -> Result {
     match expr {
         Expr::Block(block) => eval_block(*block, ctx),
         Expr::Decl(decl) => eval_decl(*decl, ctx),
+        Expr::Assign(assign) => eval_assign(*assign, ctx),
         Expr::Func(func) => eval_func(*func, ctx),
         Expr::Binary(binary) => eval_binary(*binary, ctx),
         Expr::Unary(unary) => eval_unary(*unary, ctx),
@@ -34,6 +38,47 @@ fn eval_block(block: Block, ctx: &mut Ctx) -> Result {
         .tail
         .map(|val| eval(val, &mut ctx))
         .unwrap_or(Ok(Value::Unit))
+}
+
+fn eval_assign(assign: Assign, ctx: &mut Ctx) -> Result {
+    match assign.left {
+        Pat::Ident(name) => {
+            let value = eval(assign.right, ctx)?;
+
+            ctx.set(&name, value).ok_or(Error::Undeclared(name))
+        }
+        Pat::Index { expr, index } => {
+            let left = eval(expr, ctx)?;
+            let index = eval(index, ctx)?;
+
+            match (left, index) {
+                (Value::List(list), Value::Int(index)) => {
+                    let value = eval(assign.right, ctx)?;
+                    let mut list = list.borrow_mut();
+
+                    let index = if index >= 0 {
+                        index as usize
+                    } else {
+                        list.len().wrapping_sub(index.abs() as usize)
+                    };
+
+                    let len = list.len();
+
+                    let elem = (list.get_mut(index)).ok_or(Error::NoElement { index, len })?;
+
+                    let old = elem.clone();
+
+                    *elem = value;
+
+                    Ok(old)
+                }
+                (value, index) => Err(Error::CannotIndex {
+                    value: value.get_type(),
+                    with: index.get_type(),
+                }),
+            }
+        }
+    }
 }
 
 fn eval_decl(decl: Decl, ctx: &mut Ctx) -> Result {
@@ -163,6 +208,8 @@ fn eval_index(expr: Index, ctx: &mut Ctx) -> Result {
 
     match (value, index) {
         (Value::List(list), Value::Int(i)) => {
+            let list = list.as_ref().borrow();
+
             let index = if i >= 0 {
                 i as usize
             } else {
@@ -203,5 +250,5 @@ fn eval_list(exprs: Vec<Expr>, ctx: &mut Ctx) -> Result {
         list.push(value);
     }
 
-    Ok(Value::List(list))
+    Ok(Value::List(Rc::new(RefCell::new(list))))
 }

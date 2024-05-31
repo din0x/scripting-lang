@@ -110,4 +110,16 @@ impl Ctx {
 
         parent.get(name)
     }
+
+    pub fn set(&mut self, name: &str, value: Value) -> Option<Value> {
+        if let Some(val) = self.inner.borrow_mut().vars.get_mut(name) {
+            let old = val.clone();
+            *val = value;
+            return Some(old);
+        }
+
+        let mut parent = self.inner.borrow().parent.clone()?;
+
+        parent.set(name, value)
+    }
 }

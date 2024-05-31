@@ -16,6 +16,7 @@ pub fn parse(s: &str) -> Result<Expr, Error> {
 pub enum Expr {
     Block(Box<Block>),
     Decl(Box<Decl>),
+    Assign(Box<Assign>),
     Func(Box<Func>),
     Binary(Box<Binary>),
     Unary(Box<Unary>),
@@ -42,6 +43,24 @@ impl Block {
 pub struct Decl {
     pub name: Box<str>,
     pub expr: Expr,
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub struct Assign {
+    pub left: Pat,
+    pub right: Expr,
+}
+
+impl Assign {
+    pub fn new(left: Pat, right: Expr) -> Self {
+        Self { left, right }
+    }
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub enum Pat {
+    Ident(Box<str>),
+    Index { expr: Expr, index: Expr },
 }
 
 #[derive(Debug, PartialEq, Clone)]
