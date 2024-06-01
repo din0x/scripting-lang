@@ -37,7 +37,7 @@ fn eval_top(block: Block, ctx: &mut Ctx) -> Result {
         .tail
         .map(|val| eval(val, ctx))
         .unwrap_or(Ok(Value::Unit))
-} 
+}
 
 fn eval_block(block: Block, ctx: &mut Ctx) -> Result {
     let mut ctx = Ctx::nested(ctx.clone());
@@ -184,34 +184,46 @@ fn eval_unary(expr: Unary, ctx: &mut Ctx) -> Result {
 fn eval_call(call: Call, ctx: &mut Ctx) -> Result {
     let val = eval(call.expr, ctx)?;
 
-    let Value::Func(func) = val else {
-        return Err(Error::NotFunc(val.get_type()));
-    };
+    match val {
+        Value::Func(func) => {
+            let func: &Func = func.borrow();
+            let mut args = HashMap::with_capacity(call.args.len());
 
-    let func: &Func = func.borrow();
-    let mut args = HashMap::with_capacity(call.args.len());
+            if call.args.len() != func.args.len() {
+                return Err(Error::ArgCount {
+                    expected: func.args.len(),
+                    found: call.args.len(),
+                });
+            }
 
-    if call.args.len() != func.args.len() {
-        return Err(Error::ArgCount {
-            expected: func.args.len(),
-            found: call.args.len(),
-        });
+            for (arg, name) in call.args.into_iter().zip(func.args.iter()) {
+                let val = eval(arg, ctx)?;
+                args.insert(name.clone(), val);
+            }
+
+            let mut func_ctx = Ctx::nested(func.ctx.clone());
+
+            func_ctx.recursion = ctx.recursion - 1;
+
+            if func_ctx.recursion == 0 {
+                return Err(Error::Recursion);
+            }
+
+            eval(func.body.clone(), &mut func_ctx)
+        }
+        Value::Extern(f) => {
+            let mut args = Vec::with_capacity(call.args.len());
+
+            for arg in call.args {
+                let value = eval(arg, ctx)?;
+
+                args.push(value);
+            }
+
+            f(args)
+        }
+        _ => Err(Error::NotFunc(val.get_type())),
     }
-
-    for (arg, name) in call.args.into_iter().zip(func.args.iter()) {
-        let val = eval(arg, ctx)?;
-        args.insert(name.clone(), val);
-    }
-
-    let mut func_ctx = Ctx::nested(func.ctx.clone());
-
-    func_ctx.recursion = ctx.recursion - 1;
-
-    if func_ctx.recursion == 0 {
-        return Err(Error::Recursion);
-    }
-
-    eval(func.body.clone(), &mut func_ctx)
 }
 
 fn eval_index(expr: Index, ctx: &mut Ctx) -> Result {

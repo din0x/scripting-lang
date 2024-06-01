@@ -16,6 +16,7 @@ pub enum Value {
     String(String),
     List(Rc<RefCell<Vec<Value>>>),
     Func(Rc<Func>),
+    Extern(fn(Vec<Value>) -> super::Result),
     Unit,
 }
 
@@ -28,6 +29,7 @@ impl Value {
             Value::String(_) => Type::String,
             Value::List(_) => Type::List,
             Value::Func(_) => Type::Func,
+            Value::Extern(_) => Type::Extern,
             Value::Unit => Type::Unit,
         }
     }
@@ -44,6 +46,7 @@ impl Display for Value {
             Value::Float(val) => write!(f, "{}", val),
             Value::String(val) => write!(f, "{val}"),
             Value::Func(_) => write!(f, "func"),
+            Value::Extern(_) => write!(f, "func"),
             Value::List(list) => {
                 NESTED_VALUES
                     .lock()
@@ -113,6 +116,7 @@ pub enum Type {
     String,
     List,
     Func,
+    Extern,
     Unit,
 }
 
@@ -127,6 +131,7 @@ impl Display for Type {
             String => "str",
             List => "list",
             Func => "func",
+            Extern => "func",
             Unit => "()",
         };
 
