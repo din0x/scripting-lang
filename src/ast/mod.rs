@@ -14,6 +14,7 @@ pub fn parse(s: &str) -> Result<Expr, Error> {
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Expr {
+    Top(Box<Block>),
     Block(Box<Block>),
     Decl(Box<Decl>),
     Assign(Box<Assign>),

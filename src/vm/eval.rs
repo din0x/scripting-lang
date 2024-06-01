@@ -13,6 +13,7 @@ use std::{borrow::Borrow, cell::RefCell, collections::HashMap, rc::Rc};
 
 pub(super) fn eval(expr: Expr, ctx: &mut Ctx) -> Result {
     match expr {
+        Expr::Top(block) => eval_top(*block, ctx),
         Expr::Block(block) => eval_block(*block, ctx),
         Expr::Decl(decl) => eval_decl(*decl, ctx),
         Expr::Assign(assign) => eval_assign(*assign, ctx),
@@ -26,6 +27,17 @@ pub(super) fn eval(expr: Expr, ctx: &mut Ctx) -> Result {
         Expr::List(list) => eval_list(list, ctx),
     }
 }
+
+fn eval_top(block: Block, ctx: &mut Ctx) -> Result {
+    for expr in block.content {
+        eval(expr, ctx)?;
+    }
+
+    block
+        .tail
+        .map(|val| eval(val, ctx))
+        .unwrap_or(Ok(Value::Unit))
+} 
 
 fn eval_block(block: Block, ctx: &mut Ctx) -> Result {
     let mut ctx = Ctx::nested(ctx.clone());

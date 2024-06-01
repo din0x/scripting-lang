@@ -21,7 +21,7 @@ pub fn parse_ast(tokens: &[Token]) -> Result {
                 parser.next();
                 body.push(expr);
             }
-            Token::Eof => return Ok(Expr::Block(Box::new(Block::new(body, Some(expr))))),
+            Token::Eof => return Ok(Expr::Top(Box::new(Block::new(body, Some(expr))))),
             token => {
                 return Err(Error::Expected {
                     expected: Token::Punc(Punc::Semicolon),
@@ -31,7 +31,7 @@ pub fn parse_ast(tokens: &[Token]) -> Result {
         }
     }
 
-    Ok(Expr::Block(Box::new(Block::new(body, None))))
+    Ok(Expr::Top(Box::new(Block::new(body, None))))
 }
 
 #[derive(Debug, PartialEq, Clone)]
