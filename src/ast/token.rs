@@ -201,6 +201,7 @@ pub enum Keyword {
     Fn,
     If,
     Else,
+    While,
     For,
     In,
 }
@@ -211,6 +212,7 @@ impl Keyword {
         ("fn", Self::Fn),
         ("if", Self::If),
         ("else", Self::Else),
+        ("while", Self::While),
         ("for", Self::For),
         ("in", Self::In),
     ];
