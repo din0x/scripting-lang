@@ -45,7 +45,10 @@ impl Display for Value {
             Value::String(val) => write!(f, "{val}"),
             Value::Func(_) => write!(f, "func"),
             Value::List(list) => {
-                NESTED_VALUES.lock().unwrap().insert(Rc::as_ptr(list) as usize);
+                NESTED_VALUES
+                    .lock()
+                    .unwrap()
+                    .insert(Rc::as_ptr(list) as usize);
 
                 let vec = list.borrow();
 
