@@ -11,7 +11,27 @@ type Result = std::result::Result<Expr, Error>;
 pub fn parse_ast(tokens: &[Token]) -> Result {
     let mut parser = Parser::new(tokens);
 
-    parse_expr(&mut parser)
+    let mut body = Vec::new();
+
+    while parser.curr() != &Token::Eof {
+        let expr = parse_expr(&mut parser)?;
+
+        match parser.curr() {
+            Token::Punc(Punc::Semicolon) => {
+                parser.next();
+                body.push(expr);
+            }
+            Token::Eof => return Ok(Expr::Block(Box::new(Block::new(body, Some(expr))))),
+            token => {
+                return Err(Error::Expected {
+                    expected: Token::Punc(Punc::Semicolon),
+                    found: token.clone(),
+                })
+            }
+        }
+    }
+
+    Ok(Expr::Block(Box::new(Block::new(body, None))))
 }
 
 #[derive(Debug, PartialEq, Clone)]
