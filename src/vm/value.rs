@@ -1,6 +1,12 @@
 use super::Ctx;
 use crate::ast::Expr;
-use std::{cell::RefCell, fmt::Display, rc::Rc};
+use std::{
+    cell::RefCell,
+    collections::HashSet,
+    fmt::Display,
+    rc::Rc,
+    sync::{LazyLock, Mutex},
+};
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Value {
@@ -27,6 +33,9 @@ impl Value {
     }
 }
 
+static NESTED_VALUES: LazyLock<Mutex<HashSet<usize>>> =
+    LazyLock::new(|| Mutex::new(HashSet::new()));
+
 impl Display for Value {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -36,17 +45,34 @@ impl Display for Value {
             Value::String(val) => write!(f, "{val}"),
             Value::Func(_) => write!(f, "func"),
             Value::List(list) => {
-                let list = list.borrow();
+                NESTED_VALUES.lock().unwrap().insert(Rc::as_ptr(list) as usize);
+
+                let vec = list.borrow();
 
                 write!(f, "[")?;
 
-                for (i, val) in list.iter().enumerate() {
-                    write!(f, "{val}")?;
+                for (i, val) in vec.iter().enumerate() {
+                    match val {
+                        Value::List(val)
+                            if NESTED_VALUES
+                                .lock()
+                                .unwrap()
+                                .contains(&(Rc::as_ptr(val) as usize)) =>
+                        {
+                            write!(f, "..")?
+                        }
+                        _ => write!(f, "{val}")?,
+                    }
 
-                    if i != list.len() - 1 {
+                    if i != vec.len() - 1 {
                         write!(f, ", ")?;
                     }
                 }
+
+                NESTED_VALUES
+                    .lock()
+                    .unwrap()
+                    .remove(&(Rc::as_ptr(list) as usize));
 
                 write!(f, "]")?;
 
