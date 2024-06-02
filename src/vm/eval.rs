@@ -5,7 +5,7 @@ use super::{
 use crate::{
     ast::{
         self, token::Lit, Assign, Binary, BinaryOp, Block, Call, Decl, Expr, Index, Pat, Unary,
-        UnaryOp,
+        UnaryOp, While,
     },
     vm::Error,
 };
@@ -16,6 +16,7 @@ pub(super) fn eval(expr: Expr, ctx: &mut Ctx) -> Result {
         Expr::Top(block) => eval_top(*block, ctx),
         Expr::Block(block) => eval_block(*block, ctx),
         Expr::Decl(decl) => eval_decl(*decl, ctx),
+        Expr::While(expr) => eval_while(*expr, ctx),
         Expr::Assign(assign) => eval_assign(*assign, ctx),
         Expr::Func(func) => eval_func(*func, ctx),
         Expr::Binary(binary) => eval_binary(*binary, ctx),
@@ -97,6 +98,16 @@ fn eval_decl(decl: Decl, ctx: &mut Ctx) -> Result {
     let value = eval(decl.expr, ctx)?;
 
     ctx.decl(decl.name, value);
+
+    Ok(Value::Unit)
+}
+
+fn eval_while(expr: While, ctx: &mut Ctx) -> Result {
+    while let Value::Bool(condition) = eval(expr.condition.clone(), ctx)?
+        && condition
+    {
+        eval(expr.body.clone(), ctx)?;
+    }
 
     Ok(Value::Unit)
 }

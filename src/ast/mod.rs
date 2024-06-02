@@ -17,6 +17,7 @@ pub enum Expr {
     Top(Box<Block>),
     Block(Box<Block>),
     Decl(Box<Decl>),
+    While(Box<While>),
     Assign(Box<Assign>),
     Func(Box<Func>),
     Binary(Box<Binary>),
@@ -44,6 +45,18 @@ impl Block {
 pub struct Decl {
     pub name: Box<str>,
     pub expr: Expr,
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub struct While {
+    pub condition: Expr,
+    pub body: Expr,
+}
+
+impl While {
+    pub fn new(condition: Expr, body: Expr) -> Self {
+        Self { condition, body }
+    }
 }
 
 #[derive(Debug, PartialEq, Clone)]

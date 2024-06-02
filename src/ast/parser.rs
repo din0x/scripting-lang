@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use super::{
     token::{Keyword, Paren, Punc, Token},
-    Binary, BinaryOp, Call, Decl, Expr, Func, Index, Unary, UnaryOp,
+    Binary, BinaryOp, Call, Decl, Expr, Func, Index, Unary, UnaryOp, While,
 };
 use crate::ast::{token::Op, Assign, Block, Pat};
 
@@ -15,6 +15,14 @@ pub fn parse_ast(tokens: &[Token]) -> Result {
 
     while parser.curr() != &Token::Eof {
         let expr = parse_expr(&mut parser)?;
+
+        match &expr {
+            Expr::While(_) => {
+                body.push(expr);
+                continue;
+            }
+            _ => {}
+        }
 
         match parser.curr() {
             Token::Punc(Punc::Semicolon) => {
@@ -90,6 +98,14 @@ fn parse_block(parser: &mut Parser) -> Result {
     {
         let expr = parse_expr(parser)?;
 
+        match &expr {
+            Expr::While(_) => {
+                content.push(expr);
+                continue;
+            }
+            _ => {}
+        }
+
         match parser.curr() {
             Token::Paren(Paren::RCurly) => {
                 tail = Some(expr);
@@ -146,6 +162,20 @@ fn parse_decl(parser: &mut Parser) -> Result {
         name: name.clone(),
         expr,
     })))
+}
+
+fn parse_while(parser: &mut Parser) -> Result {
+    if parser.curr() != &Token::Keyword(Keyword::While) {
+        return parser.parse();
+    }
+
+    parser.next();
+
+    let condition = parser.parse()?;
+
+    let body = parse_block(parser)?;
+
+    Ok(Expr::While(Box::new(While::new(condition, body))))
 }
 
 fn parse_assign(parser: &mut Parser) -> Result {
@@ -406,6 +436,7 @@ impl<'tokens> Parser<'tokens> {
             tokens,
             parse_fns: &[
                 parse_decl,
+                parse_while,
                 parse_assign,
                 parse_func,
                 parse_binary,
