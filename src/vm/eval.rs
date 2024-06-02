@@ -9,7 +9,7 @@ use crate::{
     },
     vm::Error,
 };
-use std::{borrow::Borrow, cell::RefCell, collections::HashMap, rc::Rc};
+use std::{borrow::Borrow, cell::RefCell, rc::Rc};
 
 pub(super) fn eval(expr: Expr, ctx: &mut Ctx) -> Result {
     match expr {
@@ -211,7 +211,7 @@ fn eval_call(call: Call, ctx: &mut Ctx) -> Result {
     match val {
         Value::Func(func) => {
             let func: &Func = func.borrow();
-            let mut args = HashMap::with_capacity(call.args.len());
+            let mut func_ctx = Ctx::nested(func.ctx.clone());
 
             if call.args.len() != func.args.len() {
                 return Err(Error::ArgCount {
@@ -222,10 +222,8 @@ fn eval_call(call: Call, ctx: &mut Ctx) -> Result {
 
             for (arg, name) in call.args.into_iter().zip(func.args.iter()) {
                 let val = eval(arg, ctx)?;
-                args.insert(name.clone(), val);
+                func_ctx.decl(name.clone(), val);
             }
-
-            let mut func_ctx = Ctx::nested(func.ctx.clone());
 
             func_ctx.recursion = ctx.recursion - 1;
 
