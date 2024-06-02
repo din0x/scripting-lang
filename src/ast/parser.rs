@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use super::{
     token::{Keyword, Paren, Punc, Token},
-    Binary, BinaryOp, Call, Decl, Expr, Func, Index, Unary, UnaryOp, While,
+    Binary, BinaryOp, Call, Decl, Expr, Func, If, Index, Unary, UnaryOp, While,
 };
 use crate::ast::{token::Op, Assign, Block, Pat};
 
@@ -17,7 +17,7 @@ pub fn parse_ast(tokens: &[Token]) -> Result {
         let expr = parse_expr(&mut parser)?;
 
         match &expr {
-            Expr::While(_) => {
+            Expr::While(_) | Expr::If(_) => {
                 body.push(expr);
                 continue;
             }
@@ -99,7 +99,7 @@ fn parse_block(parser: &mut Parser) -> Result {
         let expr = parse_expr(parser)?;
 
         match &expr {
-            Expr::While(_) => {
+            Expr::While(_) | Expr::If(_) => {
                 content.push(expr);
                 continue;
             }
@@ -176,6 +176,19 @@ fn parse_while(parser: &mut Parser) -> Result {
     let body = parse_block(parser)?;
 
     Ok(Expr::While(Box::new(While::new(condition, body))))
+}
+
+fn parse_if(parser: &mut Parser) -> Result {
+    if parser.curr() != &Token::Keyword(Keyword::If) {
+        return parser.parse();
+    }
+
+    parser.next();
+
+    let condition = parse_expr(parser)?;
+    let body = parse_block(parser)?;
+
+    Ok(Expr::If(Box::new(If::new(condition, body))))
 }
 
 fn parse_assign(parser: &mut Parser) -> Result {
@@ -438,6 +451,7 @@ impl<'tokens> Parser<'tokens> {
                 parse_decl,
                 parse_while,
                 parse_assign,
+                parse_if,
                 parse_func,
                 parse_binary,
                 parse_unary,
