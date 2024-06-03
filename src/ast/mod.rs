@@ -64,11 +64,16 @@ impl While {
 pub struct If {
     pub condition: Expr,
     pub body: Expr,
+    pub else_body: Option<Expr>,
 }
 
 impl If {
-    pub fn new(condition: Expr, body: Expr) -> Self {
-        Self { condition, body }
+    pub fn new(condition: Expr, body: Expr, else_body: Option<Expr>) -> Self {
+        Self {
+            condition,
+            body,
+            else_body,
+        }
     }
 }
 

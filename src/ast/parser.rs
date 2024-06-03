@@ -188,7 +188,23 @@ fn parse_if(parser: &mut Parser) -> Result {
     let condition = parse_expr(parser)?;
     let body = parse_block(parser)?;
 
-    Ok(Expr::If(Box::new(If::new(condition, body))))
+    if parser.curr() != &Token::Keyword(Keyword::Else) {
+        return Ok(Expr::If(Box::new(If::new(condition, body, None))));
+    }
+
+    parser.next();
+
+    let body_else = if parser.curr() == &Token::Keyword(Keyword::If) {
+        parse_if(parser)?
+    } else {
+        parse_block(parser)?
+    };
+
+    Ok(Expr::If(Box::new(If::new(
+        condition,
+        body,
+        Some(body_else),
+    ))))
 }
 
 fn parse_assign(parser: &mut Parser) -> Result {

@@ -120,6 +120,8 @@ fn eval_if(expr: If, ctx: &mut Ctx) -> Result {
         && condition
     {
         return eval(expr.body.clone(), ctx);
+    } else if let Some(body) = expr.else_body {
+        return eval(body, ctx)
     }
 
     Ok(Value::Unit)
