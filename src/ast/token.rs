@@ -204,6 +204,9 @@ pub enum Keyword {
     While,
     For,
     In,
+    Return,
+    Break,
+    Continue,
 }
 
 impl Keyword {
@@ -215,6 +218,9 @@ impl Keyword {
         ("while", Self::While),
         ("for", Self::For),
         ("in", Self::In),
+        ("return", Self::Return),
+        ("break", Self::Break),
+        ("continue", Self::Continue),
     ];
 }
 
