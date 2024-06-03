@@ -16,8 +16,8 @@ pub fn parse_ast(tokens: &[Token]) -> Result {
     while parser.curr() != &Token::Eof {
         let expr = parse_expr(&mut parser)?;
 
-        match &expr {
-            Expr::While(_) | Expr::If(_) => {
+        match expr {
+            Expr::While(_) | Expr::If(_) | Expr::Func(box Func { name: Some(_), .. }) => {
                 body.push(expr);
                 continue;
             }
@@ -99,7 +99,7 @@ fn parse_block(parser: &mut Parser) -> Result {
         let expr = parse_expr(parser)?;
 
         match &expr {
-            Expr::While(_) | Expr::If(_) => {
+            Expr::While(_) | Expr::If(_) | Expr::Func(box Func { name: Some(_), .. }) => {
                 content.push(expr);
                 continue;
             }

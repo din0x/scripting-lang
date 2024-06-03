@@ -1,6 +1,6 @@
 #![feature(if_let_guard)]
 #![feature(let_chains)]
-#![feature(lazy_cell)]
+#![feature(box_patterns)]
 
 use std::fmt::Display;
 
