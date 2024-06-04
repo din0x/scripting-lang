@@ -38,6 +38,11 @@ pub enum Error {
         len: usize,
     },
     Recursion,
+    Return(Value),
+    Break,
+    CannotBreak,
+    Continue,
+    CannotContinue,
 }
 
 impl Display for Error {
@@ -60,6 +65,11 @@ impl Display for Error {
                 write!(f, "trying to get element {index}, but length is {len}")
             }
             Error::Recursion => write!(f, "program has reached recursion limit"),
+            Error::Return(_) => write!(f, "cannot use `return` outside of a function"),
+            Error::Break | Error::CannotBreak => write!(f, "cannot use `break` outside of a loop"),
+            Error::Continue | Error::CannotContinue => {
+                write!(f, "cannot use `continue` outside of a loop")
+            }
         }
     }
 }

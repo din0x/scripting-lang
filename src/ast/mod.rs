@@ -27,6 +27,9 @@ pub enum Expr {
     Index(Box<Index>),
     Ident(Box<str>),
     List(Vec<Expr>),
+    Return(Box<Expr>),
+    Break,
+    Continue,
     Lit(Lit),
 }
 

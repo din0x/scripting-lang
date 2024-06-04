@@ -405,7 +405,13 @@ fn parse_primary(parser: &mut Parser) -> Result {
     let expr = match parser.curr() {
         Token::Ident(name) => Ok(Expr::Ident(name.clone())),
         Token::Lit(literal) => Ok(Expr::Lit(literal.clone())),
-        Token::Paren(Paren::LCurly) => parse_block(parser),
+        Token::Keyword(Keyword::Return) => {
+            parser.next();
+            return Ok(Expr::Return(Box::new(parse_expr(parser)?)));
+        }
+        Token::Keyword(Keyword::Break) => Ok(Expr::Break),
+        Token::Keyword(Keyword::Continue) => Ok(Expr::Continue),
+        Token::Paren(Paren::LCurly) => return parse_block(parser),
         Token::Paren(Paren::LBracket) => {
             parser.next();
 

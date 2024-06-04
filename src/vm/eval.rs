@@ -27,6 +27,9 @@ pub(super) fn eval(expr: Expr, ctx: &mut Ctx) -> Result {
         Expr::Ident(name) => eval_ident(name, ctx),
         Expr::Lit(lit) => Ok(eval_literal(lit)),
         Expr::List(list) => eval_list(list, ctx),
+        Expr::Return(expr) => Err(Error::Return(eval(*expr, ctx)?)),
+        Expr::Break => Err(Error::Break),
+        Expr::Continue => Err(Error::Continue),
     }
 }
 
@@ -107,7 +110,12 @@ fn eval_while(expr: While, ctx: &mut Ctx) -> Result {
     while let Value::Bool(condition) = eval(expr.condition.clone(), ctx)?
         && condition
     {
-        eval(expr.body.clone(), ctx)?;
+        match eval(expr.body.clone(), ctx) {
+            Ok(_) => {}
+            Err(Error::Break) => break,
+            Err(Error::Continue) => continue,
+            Err(err) => return Err(err),
+        }
     }
 
     Ok(Value::Unit)
@@ -121,7 +129,7 @@ fn eval_if(expr: If, ctx: &mut Ctx) -> Result {
     {
         return eval(expr.body.clone(), ctx);
     } else if let Some(body) = expr.else_body {
-        return eval(body, ctx)
+        return eval(body, ctx);
     }
 
     Ok(Value::Unit)
@@ -210,7 +218,7 @@ fn eval_unary(expr: Unary, ctx: &mut Ctx) -> Result {
 fn eval_call(call: Call, ctx: &mut Ctx) -> Result {
     let val = eval(call.expr, ctx)?;
 
-    match val {
+    let ret = match val {
         Value::Func(func) => {
             let func: &Func = func.borrow();
             let mut func_ctx = Ctx::nested(func.ctx.clone());
@@ -247,6 +255,14 @@ fn eval_call(call: Call, ctx: &mut Ctx) -> Result {
             f(args)
         }
         _ => Err(Error::NotFunc(val.get_type())),
+    };
+
+    match ret {
+        Ok(val) => Ok(val),
+        Err(Error::Return(val)) => Ok(val),
+        Err(Error::Break) => Err(Error::CannotBreak),
+        Err(Error::Continue) => Err(Error::CannotContinue),
+        Err(err) => Err(err),
     }
 }
 
