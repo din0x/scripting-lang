@@ -43,6 +43,7 @@ pub enum Error {
     CannotBreak,
     Continue,
     CannotContinue,
+    Custom(String),
 }
 
 impl Display for Error {
@@ -70,6 +71,7 @@ impl Display for Error {
             Error::Continue | Error::CannotContinue => {
                 write!(f, "cannot use `continue` outside of a loop")
             }
+            Error::Custom(m) => write!(f, "{m}"),
         }
     }
 }
@@ -109,6 +111,10 @@ impl Ctx {
 
     pub fn decl(&mut self, name: Box<str>, value: Value) {
         self.inner.borrow_mut().vars.insert(name, value);
+    }
+
+    pub fn decl_extern(&mut self, name: impl Into<Box<str>>, func: fn(Vec<Value>) -> Result) {
+        self.decl(name.into(), Value::Extern(func))
     }
 
     pub fn get(&self, name: &str) -> Option<Value> {
