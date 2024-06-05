@@ -1,0 +1,23 @@
+fn fib(n) {
+    if n > 90 {
+        print("n was too big");
+        return {}
+    }
+
+    let a = 1;
+    let b = 1;
+    
+    while n > 0 {
+        print(a);
+
+        let c = a + b;
+        a = b;
+        b = c;
+
+        n = n - 1;
+    }
+}
+
+let n = input("n=");
+
+fib(int(n));
