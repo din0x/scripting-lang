@@ -1,5 +1,5 @@
 use clap::Parser;
-use scripting_lang::vm::{Ctx, Value};
+use scripting_lang::vm::{Ctx, Error, Value};
 use std::{
     fs,
     io::{stdin, stdout, Write},
@@ -60,21 +60,97 @@ fn make_ctx() -> Ctx {
     let mut ctx = Ctx::new();
 
     ctx.decl("pi".into(), Value::Float(std::f64::consts::PI));
-    ctx.decl(
-        "print".into(),
-        Value::Extern(|args| {
-            for arg in args {
-                match arg {
-                    Value::String(s) => print!("{s} "),
-                    other => print!("{other} "),
-                }
+    ctx.decl_extern("print", |args| {
+        for arg in args {
+            match arg {
+                Value::String(s) => print!("{s} "),
+                other => print!("{other} "),
             }
+        }
 
-            println!();
+        println!();
 
-            Ok(Value::Unit)
-        }),
-    );
+        Ok(Value::Unit)
+    });
+    ctx.decl_extern("input", |args| {
+        for arg in args {
+            match arg {
+                Value::String(s) => print!("{s} "),
+                other => print!("{other} "),
+            }
+        }
+
+        _ = stdout().flush();
+
+        let mut buf = String::new();
+        _ = stdin().read_line(&mut buf);
+
+        Ok(Value::String(buf))
+    });
+
+    ctx.decl_extern("int", |args| {
+        if args.len() != 1 {
+            return Err(Error::ArgCount { expected: 1, found:args.len() });
+        }
+
+        let val = match args.into_iter().next().unwrap() {
+            Value::Bool(b) => if b { 1 } else { 0 },
+            Value::Int(i) => i,
+            Value::Float(f) => f as i64,
+            Value::String(s) => {
+                let Ok(i) = s.trim().parse() else {
+                    return Err(Error::Custom("cannot convert to int".into()))
+                };
+
+                i
+            }
+            _ => return Err(Error::Custom("cannot convert to int".into())),
+        };
+
+        Ok(Value::Int(val))
+    });
+    ctx.decl_extern("float", |args| {
+        if args.len() != 1 {
+            return Err(Error::ArgCount { expected: 1, found:args.len() });
+        }
+
+        let val = match args.into_iter().next().unwrap() {
+            Value::Int(i) => i as f64,
+            Value::Float(f) => f,
+            Value::String(s) => {
+                let Ok(i) = s.trim().parse() else {
+                    return Err(Error::Custom("cannot convert to float".into()))
+                };
+
+                i
+            }
+            _ => return Err(Error::Custom("cannot convert to float".into())),
+        };
+
+        Ok(Value::Float(val))
+    });
+    ctx.decl_extern("str", |args| {
+        if args.len() != 1 {
+            return Err(Error::ArgCount { expected: 1, found:args.len() });
+        }
+
+        let val = args.into_iter().next().unwrap().to_string();
+
+        Ok(Value::String(val))
+    });
+    ctx.decl_extern("len", |args| {
+        if args.len() != 1 {
+            return Err(Error::ArgCount { expected: 1, found:args.len() });
+        }
+
+        let val = match args.into_iter().next().unwrap() {
+            Value::String(s) =>s.len(),
+            Value::List(l) => l.borrow().len(),
+            val => return Err(Error::Custom(format!("cannot call len() on `{}`", val.get_type()))),
+        };
+
+        Ok(Value::Int(val as i64))
+    });
 
     ctx
 }
